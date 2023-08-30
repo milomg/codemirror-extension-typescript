@@ -6,7 +6,7 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build": "tsc && tsup",
-    "dev": "vite ./dev"
+		"dev": "vite ./dev"
 	},
 	"exports": {
 		".": {
@@ -19,10 +19,14 @@
 	"author": "Thomas Beer",
 	"license": "MIT",
 	"devDependencies": {
+		"solid-js": "^1.7.11",
 		"tsup": "^7.2.0",
 		"typescript": "^5.2.2",
 		"vite": "^4.3.9",
 		"vite-plugin-solid": "^2.7.0",
-    "solid-js": "^1.7.11"
+		"@typescript/vfs": "^1.5.0"
+	},
+	"dependencies": {
+		"@codemirror/autocomplete": "^6.9.0"
 	}
 }
