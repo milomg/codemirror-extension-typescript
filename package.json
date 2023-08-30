@@ -1,0 +1,28 @@
+{
+	"name": "codemirror-extension-typescript",
+	"version": "1.0.0",
+	"description": "",
+	"main": "./dist/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsc && tsup",
+    "dev": "vite ./dev"
+	},
+	"exports": {
+		".": {
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js",
+			"types": "./types/index.d.ts"
+		}
+	},
+	"keywords": [],
+	"author": "Thomas Beer",
+	"license": "MIT",
+	"devDependencies": {
+		"tsup": "^7.2.0",
+		"typescript": "^5.2.2",
+		"vite": "^4.3.9",
+		"vite-plugin-solid": "^2.7.0",
+    "solid-js": "^1.7.11"
+	}
+}
