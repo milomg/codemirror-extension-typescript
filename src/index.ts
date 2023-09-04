@@ -1,14 +1,19 @@
 import { autocompletion, CompletionResult, completeFromList } from "@codemirror/autocomplete";
+import { javascript } from "@codemirror/lang-javascript";
+import type { Extension } from "@codemirror/state";
+import type { LanguageSupport } from "@codemirror/language";
 import type { VirtualTypeScriptEnvironment } from "@typescript/vfs";
-export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: string) => {
-	autocompletion({
+export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: string): Extension => {
+	return autocompletion({
 		activateOnTyping: true,
 		maxRenderedOptions: 30,
 		override: [
 			async (ctx): Promise<CompletionResult | null> => {
 				const { pos } = ctx;
 				try {
+					console.log("Getting completitions")
 					const completions = env.languageService.getCompletionsAtPosition(fileName, pos, {});
+					console.log(completions);
 					if (!completions) {
 						console.log("Unable to get completions", { pos });
 						return null;
@@ -27,4 +32,7 @@ export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: st
 			},
 		],
 	});
+};
+export const typescript = ({ jsx }: { jsx: boolean } = { jsx: false }): LanguageSupport => {
+	return javascript({ typescript: true, jsx });
 };
