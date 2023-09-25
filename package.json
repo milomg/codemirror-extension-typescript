@@ -19,20 +19,21 @@
 	"author": "Thomas Beer",
 	"license": "MIT",
 	"devDependencies": {
-		"@codemirror/language": "^6.9.0",
+		"@codemirror/language": "^6.9.1",
 		"@codemirror/state": "^6.2.1",
 		"@lezer/highlight": "^1.1.6",
 		"@typescript/vfs": "^1.5.0",
 		"codemirror": "^6.0.1",
-		"solid-js": "^1.7.11",
+		"solid-js": "^1.7.12",
 		"tsup": "^7.2.0",
 		"typescript": "^5.2.2",
-		"vite": "^4.3.9",
+		"vite": "^4.4.9",
 		"vite-plugin-solid": "^2.7.0"
 	},
 	"dependencies": {
-		"@codemirror/autocomplete": "^6.9.0",
+		"@codemirror/autocomplete": "^6.9.1",
 		"@codemirror/lang-javascript": "^6.2.1",
-		"@codemirror/view": "^6.17.1"
+		"@codemirror/lint": "^6.4.2",
+		"@codemirror/view": "^6.20.2"
 	}
 }

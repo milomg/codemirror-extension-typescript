@@ -1,11 +1,11 @@
 import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs";
 import ts, { CompilerOptions, ModuleKind, ModuleResolutionKind, ScriptTarget } from "typescript";
-import { tsAutocompletion, typescript, typescriptHoverTooltip } from "../../../../src";
+import { tsAutocompletion, tsLinting, typescript, typescriptHoverTooltip } from "../../../../src";
 import { basicSetup, EditorView, minimalSetup } from "codemirror";
 
 import { onMount } from "solid-js";
 import { vsCodeDarkPlusTheme, vsCodeDarkPlusHighlightStyle } from "./vs-code-dark-plus";
-import { syntaxHighlighting } from "@codemirror/language";
+import { codeFolding, syntaxHighlighting } from "@codemirror/language";
 
 const types = import.meta.glob("../../../../node_modules/typescript/lib/*", {
 	eager: true,
@@ -34,9 +34,11 @@ export const Editor = () => {
 			doc: "console.log('hello')\n",
 			extensions: [
 				typescript(),
+				codeFolding(),
 				tsAutocompletion(env, "index.ts"),
 				syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
-				typescriptHoverTooltip(env, "index.ts"),
+				typescriptHoverTooltip(env, "index.ts", vsCodeDarkPlusHighlightStyle),
+				tsLinting(env, "index.ts"),
 				vsCodeDarkPlusTheme,
 				basicSetup,
 				EditorView.updateListener.of((update) => {
