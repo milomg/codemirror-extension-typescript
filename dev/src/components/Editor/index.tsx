@@ -3,7 +3,7 @@ import ts, { CompilerOptions, ModuleKind, ModuleResolutionKind, ScriptTarget } f
 import { tsAutocompletion, typescript, typescriptHoverTooltip } from "../../../../src";
 import { basicSetup, EditorView, minimalSetup } from "codemirror";
 
-import { createEffect, createSignal } from "solid-js";
+import { onMount } from "solid-js";
 import { vsCodeDarkPlusTheme, vsCodeDarkPlusHighlightStyle } from "./vs-code-dark-plus";
 import { syntaxHighlighting } from "@codemirror/language";
 
@@ -26,12 +26,10 @@ Object.keys(types).forEach((key) => {
 });
 fsMap.set("index.ts", "console.log(123)");
 const system = createSystem(fsMap);
-const env = createVirtualTypeScriptEnvironment(system, ["index.ts"], ts, compilerOptions);
 export const Editor = () => {
-	const [parent, setParent] = createSignal<HTMLDivElement>();
-	createEffect(() => {
-		const p = parent();
-		if (!p) return;
+	const env = createVirtualTypeScriptEnvironment(system, ["index.ts"], ts, compilerOptions);
+	let parent!: HTMLDivElement;
+	onMount(() => {
 		new EditorView({
 			doc: "console.log('hello')\n",
 			extensions: [
@@ -41,9 +39,14 @@ export const Editor = () => {
 				typescriptHoverTooltip(env, "index.ts"),
 				vsCodeDarkPlusTheme,
 				basicSetup,
+				EditorView.updateListener.of((update) => {
+					if (update.docChanged) {
+						env.updateFile("index.ts", update.state.doc.toString());
+					}
+				}),
 			],
-			parent: p,
+			parent,
 		});
 	});
-	return <div ref={setParent} style={{ "text-align": "left" }}></div>;
+	return <div ref={parent} style={{ "text-align": "left" }}></div>;
 };
