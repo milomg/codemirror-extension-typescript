@@ -1,12 +1,12 @@
 import { autocompletion, CompletionResult, completeFromList } from "@codemirror/autocomplete";
-import { javascript } from "@codemirror/lang-javascript";
-import type { Extension } from "@codemirror/state";
-import type { HighlightStyle, LanguageSupport } from "@codemirror/language";
+import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
+import { StateField, type Extension, EditorState } from "@codemirror/state";
+import { type HighlightStyle, type LanguageSupport } from "@codemirror/language";
 import type { VirtualTypeScriptEnvironment } from "@typescript/vfs";
-import { Tooltip, hoverTooltip } from "@codemirror/view";
-import { displayPartsToString } from "typescript";
+import { EditorView, Tooltip, hoverTooltip, showTooltip } from "@codemirror/view";
+import { ScriptElementKind, displayPartsToString } from "typescript";
 import { Diagnostic, linter } from "@codemirror/lint";
-import { Tag, tags } from "@lezer/highlight";
+import { highlightTree } from "@lezer/highlight";
 
 export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: string): Extension => {
 	return autocompletion({
@@ -23,9 +23,37 @@ export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: st
 						console.log("Unable to get completions", { pos });
 						return null;
 					}
+
+					// type Input = ScriptElementKind
+					const map: Record<
+						string,
+						| "class"
+						| "constant"
+						| "enum"
+						| "function"
+						| "interface"
+						| "keyword"
+						| "method"
+						| "namespace"
+						| "property"
+						| "text"
+						| "type"
+						| "variable"
+					> = {
+						class: "class",
+						keyword: "keyword",
+						interface: "interface",
+						method: "method",
+						module: "namespace",
+						property: "property",
+						string: "text",
+						type: "type",
+						var: "variable",
+						const: "constant",
+					};
 					return completeFromList(
 						completions.entries.map((c, _) => ({
-							type: c.kind,
+							type: map[c.kind] || c.kind,
 							label: c.name,
 							boost: 1 / Number(c.sortText),
 						})),
@@ -38,9 +66,11 @@ export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: st
 		],
 	});
 };
+
 export const typescript = ({ jsx }: { jsx: boolean } = { jsx: false }): LanguageSupport => {
 	return javascript({ typescript: true, jsx });
 };
+
 export const typescriptHoverTooltip = (
 	env: VirtualTypeScriptEnvironment,
 	fileName: string,
@@ -54,50 +84,44 @@ export const typescriptHoverTooltip = (
 				const dom = document.createElement("div");
 				if (!quickInfo) return { dom: dom };
 				dom.setAttribute("class", "cm-quickinfo-tooltip");
-				dom.setAttribute("style", "max-width:700px");
+				dom.setAttribute(
+					"style",
+					'max-width:700px;font-family:Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
+				);
 				console.log(quickInfo.displayParts);
-				const todo = tags.content;
-				const vscodeToCodeMirror: Record<string, Tag> = {
-					aliasName: todo,
-					className: tags.className,
-					enumName: todo,
-					fieldName: todo,
-					interfaceName: todo,
-					keyword: tags.keyword,
-					lineBreak: todo,
-					numericLiteral: tags.number,
-					stringLiteral: tags.string,
-					localName: todo,
-					methodName: tags.function(tags.propertyName),
-					moduleName: todo,
-					operator: tags.operator,
-					parameterName: todo,
-					propertyName: todo,
-					punctuation: tags.punctuation,
-					space: tags.separator,
-					text: tags.content,
-					typeParameterName: todo,
-					enumMemberName: todo,
-					functionName: tags.function(tags.definition(tags.name)),
-					regularExpressionLiteral: todo,
-					link: tags.link,
-					linkName: todo,
-					linkText: todo,
-				};
-				console.log(quickInfo.kind);
-				for (const item of quickInfo.displayParts || []) {
-					const span = document.createElement("span");
-					if (item.kind in vscodeToCodeMirror)
-						span.setAttribute("class", hlStyle.style([vscodeToCodeMirror[item.kind]])!);
-					span.textContent = item.text;
-					dom.appendChild(span);
-				}
+				const todo = displayPartsToString(quickInfo.displayParts);
+
+				const withoutMethod = todo.replace(/^\(method\)/, "");
+
+				let last = 0;
+				highlightTree(
+					javascriptLanguage.parser
+						.configure({
+							dialect: "typescript",
+							top: "Script",
+						})
+						.parse(withoutMethod),
+					hlStyle,
+					(from, to, classes) => {
+						if (from > last) {
+							const span = document.createElement("span");
+							span.textContent = withoutMethod.slice(last, from);
+							dom.appendChild(span);
+						}
+						const span = document.createElement("span");
+						span.setAttribute("class", classes);
+						span.textContent = withoutMethod.slice(from, to);
+						dom.appendChild(span);
+						last = to;
+					},
+				);
 				return { dom };
 			},
 		};
 		return tooltip;
 	});
 };
+
 export const tsLinting = (env: VirtualTypeScriptEnvironment, fileName: string): Extension => {
 	return linter(() => {
 		const diagnostics = env.languageService.getSemanticDiagnostics(fileName);
@@ -108,4 +132,51 @@ export const tsLinting = (env: VirtualTypeScriptEnvironment, fileName: string): 
 			message: x.messageText as string,
 		}));
 	});
+};
+
+export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string) => {
+	const cursorTooltipField = StateField.define<readonly Tooltip[]>({
+		create: getCursorTooltips,
+
+		update(tooltips, tr) {
+			if (!tr.docChanged && !tr.selection) return tooltips;
+
+			return getCursorTooltips(tr.state);
+		},
+
+		provide: (f) => showTooltip.computeN([f], (state) => state.field(f)),
+	});
+	function getCursorTooltips(state: EditorState): readonly Tooltip[] {
+		return state.selection.ranges
+			.filter((range) => range.empty)
+			.map<Tooltip | undefined>((range) => {
+				const signatureItems = env.languageService.getSignatureHelpItems(fileName, range.head, {});
+				const text = signatureItems?.items.map(
+					(x) =>
+						displayPartsToString(x.prefixDisplayParts) +
+						x.parameters
+							.map((x) => displayPartsToString(x.displayParts))
+							.join(displayPartsToString(x.separatorDisplayParts)) +
+						displayPartsToString(x.suffixDisplayParts),
+				);
+				if (!text) return undefined;
+				return {
+					pos: range.head,
+					above: true,
+					// strictSide: true,
+					create: () => {
+						let dom = document.createElement("div");
+						dom.className = "cm-tooltip-parameters";
+						dom.textContent = text?.[0]!;
+						return { dom };
+					},
+				};
+			})
+			.filter((x): x is Tooltip => x !== undefined);
+	}
+	const cursorTooltipBaseTheme = EditorView.baseTheme({
+		".cm-tooltip.cm-tooltip-cursor": {},
+	});
+
+	return [cursorTooltipField, cursorTooltipBaseTheme];
 };

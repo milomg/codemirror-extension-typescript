@@ -120,7 +120,7 @@ export const vsCodeDarkPlusTheme = EditorView.theme(
 );
 
 export const vsCodeDarkPlusHighlightStyle = HighlightStyle.define([
-	{ tag: tags.keyword, color: keyword },
+	{ tag: [tags.keyword, tags.operatorKeyword], color: keyword },
 	{
 		tag: [tags.controlKeyword, tags.moduleKeyword],
 		color: controlFlowAndModuleKeywords,
@@ -162,7 +162,6 @@ export const vsCodeDarkPlusHighlightStyle = HighlightStyle.define([
 	{
 		tag: [
 			tags.operator,
-			tags.operatorKeyword,
 			tags.url,
 			tags.escape,
 			tags.regexp,

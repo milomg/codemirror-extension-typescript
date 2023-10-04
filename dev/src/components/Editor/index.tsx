@@ -1,6 +1,6 @@
 import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs";
 import ts, { CompilerOptions, ModuleKind, ModuleResolutionKind, ScriptTarget } from "typescript";
-import { tsAutocompletion, tsLinting, typescript, typescriptHoverTooltip } from "../../../../src";
+import { paramTooltip, tsAutocompletion, tsLinting, typescript, typescriptHoverTooltip } from "../../../../src";
 import { basicSetup, EditorView, minimalSetup } from "codemirror";
 
 import { onMount } from "solid-js";
@@ -39,6 +39,7 @@ export const Editor = () => {
 				syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
 				typescriptHoverTooltip(env, "index.ts", vsCodeDarkPlusHighlightStyle),
 				tsLinting(env, "index.ts"),
+				paramTooltip(env, "index.ts"),
 				vsCodeDarkPlusTheme,
 				basicSetup,
 				EditorView.updateListener.of((update) => {
