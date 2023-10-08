@@ -1,70 +1,79 @@
-import { autocompletion, CompletionResult, completeFromList } from "@codemirror/autocomplete";
+import { autocompletion, CompletionResult, completeFromList, startCompletion } from "@codemirror/autocomplete";
 import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
-import { StateField, type Extension, EditorState } from "@codemirror/state";
+import { StateField, type Extension, EditorState, Prec } from "@codemirror/state";
 import { type HighlightStyle, type LanguageSupport } from "@codemirror/language";
 import type { VirtualTypeScriptEnvironment } from "@typescript/vfs";
-import { EditorView, Tooltip, hoverTooltip, showTooltip } from "@codemirror/view";
+import { EditorView, Tooltip, hoverTooltip, keymap, showTooltip } from "@codemirror/view";
 import { ScriptElementKind, displayPartsToString } from "typescript";
 import { Diagnostic, linter } from "@codemirror/lint";
 import { highlightTree } from "@lezer/highlight";
 
 export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: string): Extension => {
-	return autocompletion({
-		activateOnTyping: true,
-		maxRenderedOptions: 30,
-		override: [
-			async (ctx): Promise<CompletionResult | null> => {
-				const { pos } = ctx;
-				try {
-					console.log("Getting completitions");
-					const completions = env.languageService.getCompletionsAtPosition(fileName, pos, {});
-					console.log(completions);
-					if (!completions) {
-						console.log("Unable to get completions", { pos });
+	return [
+		autocompletion({
+			activateOnTyping: true,
+			maxRenderedOptions: 30,
+			override: [
+				async (ctx): Promise<CompletionResult | null> => {
+					console.log("called");
+					const { pos } = ctx;
+					try {
+						const completions = env.languageService.getCompletionsAtPosition(fileName, pos, {});
+
+						if (!completions) return null;
+
+						// type Input = ScriptElementKind
+						const map: Record<
+							string,
+							| "class"
+							| "constant"
+							| "enum"
+							| "function"
+							| "interface"
+							| "keyword"
+							| "method"
+							| "namespace"
+							| "property"
+							| "text"
+							| "type"
+							| "variable"
+						> = {
+							class: "class",
+							keyword: "keyword",
+							interface: "interface",
+							method: "method",
+							module: "namespace",
+							property: "property",
+							string: "text",
+							type: "type",
+							var: "variable",
+							const: "constant",
+						};
+						return completeFromList(
+							completions.entries.map((c, _) => ({
+								type: map[c.kind] || c.kind,
+								label: c.name,
+								boost: 1 / Number(c.sortText),
+							})),
+						)(ctx);
+					} catch (e) {
+						console.log("Unable to get completions", { pos, error: e });
 						return null;
 					}
-
-					// type Input = ScriptElementKind
-					const map: Record<
-						string,
-						| "class"
-						| "constant"
-						| "enum"
-						| "function"
-						| "interface"
-						| "keyword"
-						| "method"
-						| "namespace"
-						| "property"
-						| "text"
-						| "type"
-						| "variable"
-					> = {
-						class: "class",
-						keyword: "keyword",
-						interface: "interface",
-						method: "method",
-						module: "namespace",
-						property: "property",
-						string: "text",
-						type: "type",
-						var: "variable",
-						const: "constant",
-					};
-					return completeFromList(
-						completions.entries.map((c, _) => ({
-							type: map[c.kind] || c.kind,
-							label: c.name,
-							boost: 1 / Number(c.sortText),
-						})),
-					)(ctx);
-				} catch (e) {
-					console.log("Unable to get completions", { pos, error: e });
-					return null;
-				}
+				},
+			],
+		}),
+		keymap.of([
+			{
+				key: ".",
+				run: (x) => {
+					// TODO: fix this hack
+					setTimeout(() => startCompletion(x), 1);
+					return false;
+				},
 			},
-		],
-	});
+		]),
+	];
 };
 
 export const typescript = ({ jsx }: { jsx: boolean } = { jsx: false }): LanguageSupport => {
@@ -88,10 +97,7 @@ export const typescriptHoverTooltip = (
 					"style",
 					'max-width:700px;font-family:Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
 				);
-				console.log(quickInfo.displayParts);
 				const todo = displayPartsToString(quickInfo.displayParts);
-
-				const withoutMethod = todo.replace(/^\(method\)/, "");
 
 				let last = 0;
 				highlightTree(
@@ -100,17 +106,17 @@ export const typescriptHoverTooltip = (
 							dialect: "typescript",
 							top: "Script",
 						})
-						.parse(withoutMethod),
+						.parse(todo),
 					hlStyle,
 					(from, to, classes) => {
 						if (from > last) {
 							const span = document.createElement("span");
-							span.textContent = withoutMethod.slice(last, from);
+							span.textContent = todo.slice(last, from);
 							dom.appendChild(span);
 						}
 						const span = document.createElement("span");
 						span.setAttribute("class", classes);
-						span.textContent = withoutMethod.slice(from, to);
+						span.textContent = todo.slice(from, to);
 						dom.appendChild(span);
 						last = to;
 					},
@@ -139,8 +145,6 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 		create: getCursorTooltips,
 
 		update(tooltips, tr) {
-			if (!tr.docChanged && !tr.selection) return tooltips;
-
 			return getCursorTooltips(tr.state);
 		},
 
@@ -175,7 +179,9 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 			.filter((x): x is Tooltip => x !== undefined);
 	}
 	const cursorTooltipBaseTheme = EditorView.baseTheme({
-		".cm-tooltip.cm-tooltip-cursor": {},
+		".cm-tooltip.cm-tooltip-parameters": {
+			"max-width": "700px",
+		},
 	});
 
 	return [cursorTooltipField, cursorTooltipBaseTheme];
