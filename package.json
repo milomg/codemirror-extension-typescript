@@ -6,7 +6,9 @@
 	"scripts": {
 		"format": "prettier --write {src,dev}/",
 		"build": "tsc && tsup",
-		"dev": "vite ./dev"
+		"dev": "vite ./dev",
+		"dev-build": "vite build ./dev",
+		"dev-serve": "vite preview ./dev"
 	},
 	"exports": {
 		".": {
