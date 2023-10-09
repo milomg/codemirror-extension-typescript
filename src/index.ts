@@ -15,7 +15,6 @@ export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: st
 			maxRenderedOptions: 30,
 			override: [
 				async (ctx): Promise<CompletionResult | null> => {
-					console.log("called");
 					const { pos } = ctx;
 					try {
 						const completions = env.languageService.getCompletionsAtPosition(fileName, pos, {});

@@ -27,13 +27,13 @@
 		"solid-js": "^1.7.12",
 		"tsup": "^7.2.0",
 		"typescript": "^5.2.2",
-		"vite": "^4.4.10",
+		"vite": "^4.4.11",
 		"vite-plugin-solid": "^2.7.0"
 	},
 	"dependencies": {
-		"@codemirror/autocomplete": "^6.9.1",
+		"@codemirror/autocomplete": "^6.9.2",
 		"@codemirror/lang-javascript": "^6.2.1",
 		"@codemirror/lint": "^6.4.2",
-		"@codemirror/view": "^6.21.2"
+		"@codemirror/view": "^6.21.3"
 	}
 }

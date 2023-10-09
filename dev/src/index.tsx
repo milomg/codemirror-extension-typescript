@@ -2,12 +2,12 @@
 import type { Component } from "solid-js";
 import { render } from "solid-js/web";
 import { Editor } from "./components/Editor";
-import styles from "./App.module.css";
 import "./index.css";
 
 const App: Component = () => {
 	return (
-		<div class={styles.App}>
+		<div class="App">
+			<h1>CodeMirror TS Demo</h1>
 			<Editor />
 		</div>
 	);

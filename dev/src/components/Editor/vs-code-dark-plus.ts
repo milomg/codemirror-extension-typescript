@@ -160,14 +160,7 @@ export const vsCodeDarkPlusHighlightStyle = HighlightStyle.define([
 	},
 	{ tag: [tags.number], color: numbersAndUnits },
 	{
-		tag: [
-			tags.operator,
-			tags.url,
-			tags.escape,
-			tags.regexp,
-			tags.link,
-			tags.special(tags.string),
-		],
+		tag: [tags.operator, tags.url, tags.escape, tags.regexp, tags.link, tags.special(tags.string)],
 		color: operators,
 	},
 	{

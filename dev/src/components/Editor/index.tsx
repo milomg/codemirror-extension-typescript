@@ -29,27 +29,25 @@ const system = createSystem(fsMap);
 export const Editor = () => {
 	const env = createVirtualTypeScriptEnvironment(system, ["index.ts"], ts, compilerOptions);
 	let parent!: HTMLDivElement;
-	onMount(() => {
-		new EditorView({
-			doc: "console.log('hello')\n",
-			extensions: [
-				typescript(),
-				codeFolding(),
-				tsAutocompletion(env, "index.ts"),
-				syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
-				typescriptHoverTooltip(env, "index.ts", vsCodeDarkPlusHighlightStyle),
-				tsLinting(env, "index.ts"),
-				paramTooltip(env, "index.ts"),
-				vsCodeDarkPlusTheme,
-				basicSetup,
-				EditorView.updateListener.of((update) => {
-					if (update.docChanged) {
-						env.updateFile("index.ts", update.state.doc.toString());
-					}
-				}),
-			],
-			parent,
-		});
+	const editor = new EditorView({
+		doc: "console.log('hello')\n",
+		extensions: [
+			typescript(),
+			codeFolding(),
+			tsAutocompletion(env, "index.ts"),
+			syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
+			typescriptHoverTooltip(env, "index.ts", vsCodeDarkPlusHighlightStyle),
+			tsLinting(env, "index.ts"),
+			paramTooltip(env, "index.ts"),
+			vsCodeDarkPlusTheme,
+			basicSetup,
+			EditorView.updateListener.of((update) => {
+				if (update.docChanged) {
+					env.updateFile("index.ts", update.state.doc.toString());
+				}
+			}),
+		],
 	});
-	return <div ref={parent} style={{ "text-align": "left" }}></div>;
+
+	return <>{editor.dom}</>;
 };

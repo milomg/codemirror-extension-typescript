@@ -9,3 +9,17 @@ body {
 code {
 	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+.App {
+	text-align: center;
+	display: flex;
+	max-width: 800px;
+	margin: auto;
+	flex-direction: column;
+}
+
+.cm-editor {
+	width: auto;
+	text-align: left;
+	height: 600px;
+}
