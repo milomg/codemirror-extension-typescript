@@ -6,7 +6,7 @@ import { basicSetup, EditorView } from "codemirror";
 import { vsCodeDarkPlusTheme, vsCodeDarkPlusHighlightStyle } from "./vs-code-dark-plus";
 import { codeFolding, syntaxHighlighting } from "@codemirror/language";
 
-const types = import.meta.glob("../../../../node_modules/typescript/lib/*", {
+const types = import.meta.glob("../../../../node_modules/typescript/lib/*.d.ts", {
 	eager: true,
 	as: "raw",
 });
