@@ -154,24 +154,48 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 			.filter((range) => range.empty)
 			.map<Tooltip | undefined>((range) => {
 				const signatureItems = env.languageService.getSignatureHelpItems(fileName, range.head, {});
-				const text = signatureItems?.items.map(
-					(x) =>
-						displayPartsToString(x.prefixDisplayParts) +
-						x.parameters
-							.map((x) => displayPartsToString(x.displayParts))
-							.join(displayPartsToString(x.separatorDisplayParts)) +
-						displayPartsToString(x.suffixDisplayParts),
-				);
-				if (!text) return undefined;
+
+				if (!signatureItems) return undefined;
+
+				let x = signatureItems.items[signatureItems.selectedItemIndex];
+
 				return {
 					pos: range.head,
 					above: true,
 					// strictSide: true,
 					create: () => {
+						let outer = document.createElement("div");
+						outer.className = "cm-tooltip-parameters";
+
 						let dom = document.createElement("div");
-						dom.className = "cm-tooltip-parameters";
-						dom.textContent = text?.[0]!;
-						return { dom };
+						dom.className = "cm-tooltip-paramCode";
+
+						dom.appendChild(document.createTextNode(displayPartsToString(x.prefixDisplayParts)));
+
+						const separator = displayPartsToString(x.separatorDisplayParts);
+						for (let i = 0; i < x.parameters.length; i++) {
+							if (i) dom.appendChild(document.createTextNode(separator));
+
+							const text = displayPartsToString(x.parameters[i].displayParts);
+
+							if (signatureItems.argumentIndex === i) {
+								const bold = document.createElement("b");
+								bold.textContent = text;
+								dom.appendChild(bold);
+							} else {
+								dom.appendChild(document.createTextNode(text));
+							}
+						}
+						dom.appendChild(document.createTextNode(displayPartsToString(x.suffixDisplayParts)));
+						
+
+						const docs = document.createElement("div");
+						docs.className = "cm-tooltip-paramDocs";
+						docs.textContent = displayPartsToString(x.documentation);
+						outer.appendChild(dom);
+						outer.appendChild(docs);
+
+						return { dom: outer };
 					},
 				};
 			})
