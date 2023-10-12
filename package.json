@@ -22,21 +22,21 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@codemirror/language": "^6.9.1",
-		"@codemirror/state": "^6.2.1",
+		"@codemirror/state": "^6.3.0",
 		"@lezer/highlight": "^1.1.6",
 		"@typescript/vfs": "^1.5.0",
 		"codemirror": "^6.0.1",
-		"solid-js": "^1.7.12",
+		"solid-js": "^1.8.1",
 		"tsup": "^7.2.0",
 		"typescript": "^5.2.2",
 		"vite": "^4.4.11",
-		"vite-plugin-solid": "^2.7.0"
+		"vite-plugin-solid": "^2.7.1"
 	},
 	"dependencies": {
-		"@codemirror/autocomplete": "^6.9.2",
+		"@codemirror/autocomplete": "^6.10.1",
 		"@codemirror/lang-javascript": "^6.2.1",
 		"@codemirror/lint": "^6.4.2",
 		"@codemirror/view": "^6.21.3",
-		"marked": "^9.1.0"
+		"marked": "^9.1.1"
 	}
 }
