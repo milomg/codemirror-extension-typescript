@@ -201,7 +201,7 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 						}
 
 						for (const param of x.parameters) {
-							if (!param.documentation) continue;
+							if (!param.documentation.length) continue;
 
 							const docs = document.createElement("div");
 							docs.className = "cm-tooltip-param-docs";
