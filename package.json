@@ -36,6 +36,7 @@
 		"@codemirror/autocomplete": "^6.9.2",
 		"@codemirror/lang-javascript": "^6.2.1",
 		"@codemirror/lint": "^6.4.2",
-		"@codemirror/view": "^6.21.3"
+		"@codemirror/view": "^6.21.3",
+		"marked": "^9.1.0"
 	}
 }

@@ -1,6 +1,6 @@
 import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs";
 import ts, { CompilerOptions, JsxEmit, ModuleKind, ModuleResolutionKind, ScriptTarget } from "typescript";
-import { paramTooltip, tsAutocompletion, tsLinting, typescript, typescriptHoverTooltip } from "../../../../src";
+import { paramTooltip, tsAutocompletion, tsLinting, typescript, typescriptBaseTheme, typescriptHoverTooltip } from "../../../../src";
 import { basicSetup, EditorView } from "codemirror";
 
 import { vsCodeDarkPlusTheme, vsCodeDarkPlusHighlightStyle } from "./vs-code-dark-plus";
@@ -67,6 +67,7 @@ export const Editor = () => {
 			tsLinting(env, "file:///index.tsx"),
 			paramTooltip(env, "file:///index.tsx"),
 			vsCodeDarkPlusTheme,
+			typescriptBaseTheme,
 			basicSetup,
 			EditorView.updateListener.of((update) => {
 				if (update.docChanged) {

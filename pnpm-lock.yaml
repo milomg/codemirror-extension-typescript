@@ -17,6 +17,9 @@ dependencies:
   '@codemirror/view':
     specifier: ^6.21.3
     version: 6.21.3
+  marked:
+    specifier: ^9.1.0
+    version: 9.1.0
 
 devDependencies:
   '@codemirror/language':
@@ -1202,6 +1205,12 @@ packages:
     dependencies:
       yallist: 3.1.1
     dev: true
+
+  /marked@9.1.0:
+    resolution: {integrity: sha512-VZjm0PM5DMv7WodqOUps3g6Q7dmxs9YGiFUZ7a2majzQTTCgX+6S6NAJHPvOhgFBzYz8s4QZKWWMfZKFmsfOgA==}
+    engines: {node: '>= 16'}
+    hasBin: true
+    dev: false
 
   /merge-anything@5.1.7:
     resolution: {integrity: sha512-eRtbOb1N5iyH0tkQDAoQ4Ipsp/5qSR79Dzrz8hEPxRX10RWWR/iQXdoKmBSRCThY1Fh5EhISDtpSc93fpxUniQ==}

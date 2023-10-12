@@ -1,12 +1,13 @@
 import { autocompletion, CompletionResult, completeFromList, startCompletion } from "@codemirror/autocomplete";
 import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
-import { StateField, type Extension, EditorState, Prec } from "@codemirror/state";
+import { StateField, type Extension, EditorState } from "@codemirror/state";
 import { type HighlightStyle, type LanguageSupport } from "@codemirror/language";
 import type { VirtualTypeScriptEnvironment } from "@typescript/vfs";
 import { EditorView, Tooltip, hoverTooltip, keymap, showTooltip } from "@codemirror/view";
 import { ScriptElementKind, displayPartsToString } from "typescript";
 import { Diagnostic, linter } from "@codemirror/lint";
 import { highlightTree } from "@lezer/highlight";
+import * as markdown from "marked";
 
 export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: string): Extension => {
 	return [
@@ -85,17 +86,19 @@ export const typescriptHoverTooltip = (
 	hlStyle: HighlightStyle,
 ) => {
 	return hoverTooltip((view, pos, side) => {
+		const quickInfo = env.languageService.getQuickInfoAtPosition(fileName, pos);
+		if (!quickInfo) return null;
+
 		const tooltip: Tooltip = {
-			pos,
+			pos: quickInfo.textSpan.start,
+			end: quickInfo.textSpan.start + quickInfo.textSpan.length,
 			create(_) {
-				const quickInfo = env.languageService.getQuickInfoAtPosition(fileName, pos);
+				const outer = document.createElement("div");
+				if (!quickInfo) return { dom: outer };
+				outer.setAttribute("class", "cm-quickinfo-tooltip");
+
 				const dom = document.createElement("div");
-				if (!quickInfo) return { dom: dom };
-				dom.setAttribute("class", "cm-quickinfo-tooltip");
-				dom.setAttribute(
-					"style",
-					'max-width:700px;font-family:Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
-				);
+				dom.setAttribute("class", "cm-quickinfo-tooltip-code");
 				const todo = displayPartsToString(quickInfo.displayParts);
 
 				let last = 0;
@@ -120,7 +123,17 @@ export const typescriptHoverTooltip = (
 						last = to;
 					},
 				);
-				return { dom };
+				outer.appendChild(dom);
+
+				if (quickInfo.documentation?.length) {
+					const docs = document.createElement("div");
+					docs.className = "cm-quickinfo-tooltip-docs";
+					const output = markdown.parse(displayPartsToString(quickInfo.documentation));
+					docs.innerHTML = output;
+					outer.appendChild(docs);
+				}
+
+				return { dom: outer };
 			},
 		};
 		return tooltip;
@@ -140,15 +153,6 @@ export const tsLinting = (env: VirtualTypeScriptEnvironment, fileName: string): 
 };
 
 export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string) => {
-	const cursorTooltipField = StateField.define<readonly Tooltip[]>({
-		create: getCursorTooltips,
-
-		update(tooltips, tr) {
-			return getCursorTooltips(tr.state);
-		},
-
-		provide: (f) => showTooltip.computeN([f], (state) => state.field(f)),
-	});
 	function getCursorTooltips(state: EditorState): readonly Tooltip[] {
 		return state.selection.ranges
 			.filter((range) => range.empty)
@@ -168,7 +172,7 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 						outer.className = "cm-tooltip-parameters";
 
 						let dom = document.createElement("div");
-						dom.className = "cm-tooltip-paramCode";
+						dom.className = "cm-tooltip-param-code";
 
 						dom.appendChild(document.createTextNode(displayPartsToString(x.prefixDisplayParts)));
 
@@ -187,13 +191,23 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 							}
 						}
 						dom.appendChild(document.createTextNode(displayPartsToString(x.suffixDisplayParts)));
-						
-
-						const docs = document.createElement("div");
-						docs.className = "cm-tooltip-paramDocs";
-						docs.textContent = displayPartsToString(x.documentation);
 						outer.appendChild(dom);
-						outer.appendChild(docs);
+
+						if (x.documentation) {
+							const docs = document.createElement("div");
+							docs.className = "cm-tooltip-param-docs";
+							docs.innerHTML = markdown.parse(displayPartsToString(x.documentation));
+							outer.appendChild(docs);
+						}
+
+						for (const param of x.parameters) {
+							if (!param.documentation) continue;
+
+							const docs = document.createElement("div");
+							docs.className = "cm-tooltip-param-docs";
+							docs.innerHTML = markdown.parse(displayPartsToString(param.documentation));
+							outer.appendChild(docs);
+						}
 
 						return { dom: outer };
 					},
@@ -201,11 +215,30 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 			})
 			.filter((x): x is Tooltip => x !== undefined);
 	}
-	const cursorTooltipBaseTheme = EditorView.baseTheme({
-		".cm-tooltip.cm-tooltip-parameters": {
-			"max-width": "700px",
-		},
-	});
 
-	return [cursorTooltipField, cursorTooltipBaseTheme];
+	return StateField.define<readonly Tooltip[]>({
+		create: getCursorTooltips,
+
+		update(tooltips, tr) {
+			return getCursorTooltips(tr.state);
+		},
+
+		provide: (f) => showTooltip.computeN([f], (state) => state.field(f)),
+	});
 };
+
+export const typescriptBaseTheme = EditorView.baseTheme({
+	".cm-tooltip.cm-tooltip-parameters, .cm-quickinfo-tooltip": {
+		"max-width": "700px",
+		"border": "1px solid #454545",
+	},
+	".cm-quickinfo-tooltip-code, .cm-tooltip-param-code": {
+		"white-space": "pre-wrap",
+		"padding": "8px",
+		"font-family": 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
+	},
+	".cm-quickinfo-tooltip-docs, .cm-tooltip-param-docs": {
+		"padding": "8px",
+		"border-top": "1px solid #454545",
+	},
+});
