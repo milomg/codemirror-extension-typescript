@@ -13,7 +13,6 @@ export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: st
 	return [
 		autocompletion({
 			activateOnTyping: true,
-			maxRenderedOptions: 30,
 			override: [
 				async (ctx): Promise<CompletionResult | null> => {
 					const { pos } = ctx;
@@ -49,6 +48,7 @@ export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: st
 							var: "variable",
 							const: "constant",
 						};
+
 						return completeFromList(
 							completions.entries.map((c, _) => ({
 								type: map[c.kind] || c.kind,
@@ -133,7 +133,7 @@ export const typescriptHoverTooltip = (
 					outer.appendChild(docs);
 				}
 
-				return { dom: outer };
+				return { dom: outer, overlap: true };
 			},
 		};
 		return tooltip;
@@ -209,7 +209,7 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 							outer.appendChild(docs);
 						}
 
-						return { dom: outer };
+						return { dom: outer, overlap: true };
 					},
 				};
 			})
@@ -228,8 +228,10 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 };
 
 export const typescriptBaseTheme = EditorView.baseTheme({
-	".cm-tooltip.cm-tooltip-parameters, .cm-quickinfo-tooltip": {
+	".cm-tooltip.cm-tooltip-parameters, .cm-quickinfo-tooltip, .cm-tooltip-autocomplete": {
 		"max-width": "700px",
+		"max-height": "250px",
+		"overflow-y": "scroll",
 		"border": "1px solid #454545",
 	},
 	".cm-quickinfo-tooltip-code, .cm-tooltip-param-code": {
@@ -240,5 +242,32 @@ export const typescriptBaseTheme = EditorView.baseTheme({
 	".cm-quickinfo-tooltip-docs, .cm-tooltip-param-docs": {
 		"padding": "8px",
 		"border-top": "1px solid #454545",
+	},
+	".cm-quickinfo-tooltip-docs p:first-child, .cm-tooltip-param-docs p:first-child": {
+		"margin-top": "0",
+	},
+	".cm-quickinfo-tooltip-docs p:last-child, .cm-tooltip-param-docs p:last-child": {
+		"margin-bottom": "0",
+	},
+	".cm-tooltip.cm-tooltip-autocomplete > ul": {
+		"font-family": 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace !important',
+	},
+	".cm-completionMatchedText": {
+		"text-decoration": "none !important",
+		"color": "#2aaaff",
+	},
+	"a": {
+		"color": "#3794ff",
+		"text-decoration": "inherit",
+	},
+	".cm-completionDetail": {
+		"text-overflow": "ellipsis",
+		"overflow": "hidden",
+		"max-width": "350px",
+		"display": "inline-block",
+		"float": "right",
+	},
+	".cm-tooltip.cm-tooltip-hover": {
+		"z-index": "150",
 	},
 });
