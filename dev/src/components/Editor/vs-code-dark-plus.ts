@@ -63,17 +63,9 @@ export const vsCodeDarkPlusTheme = EditorView.theme(
 		".cm-activeLine": { backgroundColor: highlightBackground },
 		".cm-selectionMatch": { backgroundColor: "#aafe661a" },
 
-		// '&.cm-editor': {
-		//   borderRadius: '5px',
-		// },
-
 		"&.cm-editor .cm-scroller": {
 			fontFamily: 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
 		},
-
-		// '&.cm-editor.cm-focused': {
-		//   outline: '5px solid #808080',
-		// },
 
 		"&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket": {
 			backgroundColor: "#bad0f847",
@@ -98,7 +90,6 @@ export const vsCodeDarkPlusTheme = EditorView.theme(
 		},
 
 		".cm-tooltip": {
-			border: "none",
 			backgroundColor: tooltipBackground,
 		},
 		".cm-tooltip .cm-tooltip-arrow:before": {
@@ -108,12 +99,6 @@ export const vsCodeDarkPlusTheme = EditorView.theme(
 		".cm-tooltip .cm-tooltip-arrow:after": {
 			borderTopColor: tooltipBackground,
 			borderBottomColor: tooltipBackground,
-		},
-		".cm-tooltip-autocomplete": {
-			"& > ul > li[aria-selected]": {
-				backgroundColor: highlightBackground,
-				color: foreground,
-			},
 		},
 	},
 	{ dark: true },

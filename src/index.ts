@@ -111,7 +111,7 @@ export const tsAutocompletion = (
 
 									if (details.documentation?.length) {
 										const docs = document.createElement("div");
-										docs.className = "cm-completionInfo-right-docs";
+										docs.className = "cm-tooltip-docs";
 										const output = markdown.parse(displayPartsToString(details.documentation));
 										docs.innerHTML = output;
 										dom.appendChild(docs);
@@ -170,7 +170,7 @@ export const typescriptHoverTooltip = (
 
 				if (quickInfo.documentation?.length) {
 					const docs = document.createElement("div");
-					docs.className = "cm-quickinfo-tooltip-docs";
+					docs.className = "cm-tooltip-docs";
 					const output = markdown.parse(displayPartsToString(quickInfo.documentation));
 					docs.innerHTML = output;
 					dom.appendChild(docs);
@@ -236,9 +236,9 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 						code.appendChild(document.createTextNode(displayPartsToString(x.suffixDisplayParts)));
 						dom.appendChild(code);
 
-						if (x.documentation) {
+						if (x.documentation.length) {
 							const docs = document.createElement("div");
-							docs.className = "cm-tooltip-param-docs";
+							docs.className = "cm-tooltip-docs";
 							docs.innerHTML = markdown.parse(displayPartsToString(x.documentation));
 							dom.appendChild(docs);
 						}
@@ -247,7 +247,7 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 							if (!param.documentation.length) continue;
 
 							const docs = document.createElement("div");
-							docs.className = "cm-tooltip-param-docs";
+							docs.className = "cm-tooltip-docs";
 							docs.innerHTML = markdown.parse(displayPartsToString(param.documentation));
 							dom.appendChild(docs);
 						}
@@ -270,45 +270,49 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 	});
 };
 
-export const typescriptBaseTheme = EditorView.baseTheme({
-	".cm-tooltip.cm-tooltip-parameters, .cm-quickinfo-tooltip, .cm-tooltip.cm-completionInfo-right": {
+export const typescriptBaseTheme = EditorView.theme({
+	".cm-tooltip": {
 		"max-width": "700px",
 		"max-height": "250px",
-		"overflow-y": "scroll",
 		"border": "1px solid #454545",
+	},
+	".cm-tooltip-parameters, .cm-quickinfo-tooltip, .cm-completionInfo-right": {
+		"overflow-y": "scroll",
 	},
 	".cm-quickinfo-tooltip-code, .cm-tooltip-param-code, .cm-completionInfo-right-code": {
 		"white-space": "pre-wrap",
 		"padding": "8px",
 		"font-family": 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
 	},
-	".cm-quickinfo-tooltip-docs, .cm-tooltip-param-docs, .cm-completionInfo-right-docs": {
+	".cm-tooltip-docs": {
 		"padding": "8px",
 		"border-top": "1px solid #454545",
 	},
-	".cm-quickinfo-tooltip-docs p:first-child, .cm-tooltip-param-docs p:first-child, .cm-completionInfo-right-docs p:first-child":
-		{
-			"margin-top": "0",
-		},
-	".cm-quickinfo-tooltip-docs p:last-child, .cm-tooltip-param-docs p:last-child, .cm-completionInfo-right-docs p:last-child":
-		{
-			"margin-bottom": "0",
-		},
+	".cm-tooltip-docs p:first-child": {
+		"margin-top": "0",
+	},
+	".cm-tooltip-docs p:last-child": {
+		"margin-bottom": "0",
+	},
 	".cm-tooltip.cm-tooltip-autocomplete > ul": {
-		"font-family": 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace !important',
+		"font-family": 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
 	},
 	".cm-completionMatchedText": {
-		"text-decoration": "none !important",
+		"text-decoration": "none",
 		"color": "#2aaaff",
+	},
+	".cm-tooltip-autocomplete > ul > li[aria-selected]": {
+		background: "#04395e",
+		color: "unset",
 	},
 	"a": {
 		"color": "#3794ff",
 		"text-decoration": "inherit",
 	},
-	".cm-tooltip.cm-tooltip-hover": {
+	".cm-tooltip-hover": {
 		"z-index": "150",
 	},
-	".cm-tooltip.cm-completionInfo.cm-completionInfo-right": {
-		"padding"	: "0",
-	}
+	".cm-completionInfo-right": {
+		padding: "0",
+	},
 });
