@@ -312,7 +312,7 @@ export const typescriptBaseTheme = EditorView.theme({
 	".cm-tooltip-hover": {
 		"z-index": "150",
 	},
-	".cm-completionInfo-right": {
+	".cm-tooltip.cm-completionInfo-right": {
 		padding: "0",
 	},
 });
