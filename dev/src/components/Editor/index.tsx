@@ -61,7 +61,7 @@ export const Editor = () => {
 		extensions: [
 			typescript({ jsx: true }),
 			codeFolding(),
-			tsAutocompletion(env, "file:///index.tsx"),
+			tsAutocompletion(env, "file:///index.tsx", vsCodeDarkPlusHighlightStyle),
 			syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
 			typescriptHoverTooltip(env, "file:///index.tsx", vsCodeDarkPlusHighlightStyle),
 			tsLinting(env, "file:///index.tsx"),

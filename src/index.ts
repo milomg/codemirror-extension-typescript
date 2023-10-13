@@ -1,4 +1,10 @@
-import { autocompletion, CompletionResult, completeFromList, startCompletion } from "@codemirror/autocomplete";
+import {
+	autocompletion,
+	CompletionResult,
+	completeFromList,
+	startCompletion,
+	CompletionInfo,
+} from "@codemirror/autocomplete";
 import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { StateField, type Extension, EditorState } from "@codemirror/state";
 import { type HighlightStyle, type LanguageSupport } from "@codemirror/language";
@@ -9,7 +15,38 @@ import { Diagnostic, linter } from "@codemirror/lint";
 import { highlightTree } from "@lezer/highlight";
 import * as markdown from "marked";
 
-export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: string): Extension => {
+function codeToDom(hlStyle: HighlightStyle, code: string): HTMLDivElement {
+	const dom = document.createElement("div");
+	let last = 0;
+	highlightTree(
+		javascriptLanguage.parser
+			.configure({
+				dialect: "typescript",
+				top: "Script",
+			})
+			.parse(code),
+		hlStyle,
+		(from, to, classes) => {
+			if (from > last) {
+				const span = document.createElement("span");
+				span.textContent = code.slice(last, from);
+				dom.appendChild(span);
+			}
+			const span = document.createElement("span");
+			span.setAttribute("class", classes);
+			span.textContent = code.slice(from, to);
+			dom.appendChild(span);
+			last = to;
+		},
+	);
+	return dom;
+}
+
+export const tsAutocompletion = (
+	env: VirtualTypeScriptEnvironment,
+	fileName: string,
+	hlStyle: HighlightStyle,
+): Extension => {
 	return [
 		autocompletion({
 			activateOnTyping: true,
@@ -53,6 +90,35 @@ export const tsAutocompletion = (env: VirtualTypeScriptEnvironment, fileName: st
 							completions.entries.map((c, _) => ({
 								type: map[c.kind] || c.kind,
 								label: c.name,
+								info: () => {
+									const details = env.languageService.getCompletionEntryDetails(
+										fileName,
+										pos,
+										c.name,
+										{},
+										undefined,
+										undefined,
+										undefined,
+									);
+									if (!details) return null;
+
+									const dom = document.createElement("div");
+
+									const todo = displayPartsToString(details.displayParts);
+									const code = codeToDom(hlStyle, todo);
+									code.className = "cm-completionInfo-right-code";
+									dom.appendChild(code);
+
+									if (details.documentation?.length) {
+										const docs = document.createElement("div");
+										docs.className = "cm-completionInfo-right-docs";
+										const output = markdown.parse(displayPartsToString(details.documentation));
+										docs.innerHTML = output;
+										dom.appendChild(docs);
+									}
+
+									return { dom: dom } as CompletionInfo;
+								},
 								boost: 1 / Number(c.sortText),
 							})),
 						)(ctx);
@@ -93,47 +159,24 @@ export const typescriptHoverTooltip = (
 			pos: quickInfo.textSpan.start,
 			end: quickInfo.textSpan.start + quickInfo.textSpan.length,
 			create(_) {
-				const outer = document.createElement("div");
-				if (!quickInfo) return { dom: outer };
-				outer.setAttribute("class", "cm-quickinfo-tooltip");
-
 				const dom = document.createElement("div");
-				dom.setAttribute("class", "cm-quickinfo-tooltip-code");
-				const todo = displayPartsToString(quickInfo.displayParts);
+				if (!quickInfo) return { dom: dom };
+				dom.setAttribute("class", "cm-quickinfo-tooltip");
 
-				let last = 0;
-				highlightTree(
-					javascriptLanguage.parser
-						.configure({
-							dialect: "typescript",
-							top: "Script",
-						})
-						.parse(todo),
-					hlStyle,
-					(from, to, classes) => {
-						if (from > last) {
-							const span = document.createElement("span");
-							span.textContent = todo.slice(last, from);
-							dom.appendChild(span);
-						}
-						const span = document.createElement("span");
-						span.setAttribute("class", classes);
-						span.textContent = todo.slice(from, to);
-						dom.appendChild(span);
-						last = to;
-					},
-				);
-				outer.appendChild(dom);
+				const todo = displayPartsToString(quickInfo.displayParts);
+				const code = codeToDom(hlStyle, todo);
+				code.setAttribute("class", "cm-quickinfo-tooltip-code");
+				dom.appendChild(code);
 
 				if (quickInfo.documentation?.length) {
 					const docs = document.createElement("div");
 					docs.className = "cm-quickinfo-tooltip-docs";
 					const output = markdown.parse(displayPartsToString(quickInfo.documentation));
 					docs.innerHTML = output;
-					outer.appendChild(docs);
+					dom.appendChild(docs);
 				}
 
-				return { dom: outer, overlap: true };
+				return { dom: dom, overlap: true };
 			},
 		};
 		return tooltip;
@@ -168,36 +211,36 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 					above: true,
 					// strictSide: true,
 					create: () => {
-						let outer = document.createElement("div");
-						outer.className = "cm-tooltip-parameters";
-
 						let dom = document.createElement("div");
-						dom.className = "cm-tooltip-param-code";
+						dom.className = "cm-tooltip-parameters";
 
-						dom.appendChild(document.createTextNode(displayPartsToString(x.prefixDisplayParts)));
+						let code = document.createElement("div");
+						code.className = "cm-tooltip-param-code";
+
+						code.appendChild(document.createTextNode(displayPartsToString(x.prefixDisplayParts)));
 
 						const separator = displayPartsToString(x.separatorDisplayParts);
 						for (let i = 0; i < x.parameters.length; i++) {
-							if (i) dom.appendChild(document.createTextNode(separator));
+							if (i) code.appendChild(document.createTextNode(separator));
 
 							const text = displayPartsToString(x.parameters[i].displayParts);
 
 							if (signatureItems.argumentIndex === i) {
 								const bold = document.createElement("b");
 								bold.textContent = text;
-								dom.appendChild(bold);
+								code.appendChild(bold);
 							} else {
-								dom.appendChild(document.createTextNode(text));
+								code.appendChild(document.createTextNode(text));
 							}
 						}
-						dom.appendChild(document.createTextNode(displayPartsToString(x.suffixDisplayParts)));
-						outer.appendChild(dom);
+						code.appendChild(document.createTextNode(displayPartsToString(x.suffixDisplayParts)));
+						dom.appendChild(code);
 
 						if (x.documentation) {
 							const docs = document.createElement("div");
 							docs.className = "cm-tooltip-param-docs";
 							docs.innerHTML = markdown.parse(displayPartsToString(x.documentation));
-							outer.appendChild(docs);
+							dom.appendChild(docs);
 						}
 
 						for (const param of x.parameters) {
@@ -206,10 +249,10 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 							const docs = document.createElement("div");
 							docs.className = "cm-tooltip-param-docs";
 							docs.innerHTML = markdown.parse(displayPartsToString(param.documentation));
-							outer.appendChild(docs);
+							dom.appendChild(docs);
 						}
 
-						return { dom: outer, overlap: true };
+						return { dom: dom, overlap: true };
 					},
 				};
 			})
@@ -228,27 +271,29 @@ export const paramTooltip = (env: VirtualTypeScriptEnvironment, fileName: string
 };
 
 export const typescriptBaseTheme = EditorView.baseTheme({
-	".cm-tooltip.cm-tooltip-parameters, .cm-quickinfo-tooltip, .cm-tooltip-autocomplete": {
+	".cm-tooltip.cm-tooltip-parameters, .cm-quickinfo-tooltip, .cm-tooltip.cm-completionInfo-right": {
 		"max-width": "700px",
 		"max-height": "250px",
 		"overflow-y": "scroll",
 		"border": "1px solid #454545",
 	},
-	".cm-quickinfo-tooltip-code, .cm-tooltip-param-code": {
+	".cm-quickinfo-tooltip-code, .cm-tooltip-param-code, .cm-completionInfo-right-code": {
 		"white-space": "pre-wrap",
 		"padding": "8px",
 		"font-family": 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace',
 	},
-	".cm-quickinfo-tooltip-docs, .cm-tooltip-param-docs": {
+	".cm-quickinfo-tooltip-docs, .cm-tooltip-param-docs, .cm-completionInfo-right-docs": {
 		"padding": "8px",
 		"border-top": "1px solid #454545",
 	},
-	".cm-quickinfo-tooltip-docs p:first-child, .cm-tooltip-param-docs p:first-child": {
-		"margin-top": "0",
-	},
-	".cm-quickinfo-tooltip-docs p:last-child, .cm-tooltip-param-docs p:last-child": {
-		"margin-bottom": "0",
-	},
+	".cm-quickinfo-tooltip-docs p:first-child, .cm-tooltip-param-docs p:first-child, .cm-completionInfo-right-docs p:first-child":
+		{
+			"margin-top": "0",
+		},
+	".cm-quickinfo-tooltip-docs p:last-child, .cm-tooltip-param-docs p:last-child, .cm-completionInfo-right-docs p:last-child":
+		{
+			"margin-bottom": "0",
+		},
 	".cm-tooltip.cm-tooltip-autocomplete > ul": {
 		"font-family": 'Menlo, Monaco, Consolas, "Andale Mono", "Ubuntu Mono", "Courier New", monospace !important',
 	},
@@ -260,14 +305,10 @@ export const typescriptBaseTheme = EditorView.baseTheme({
 		"color": "#3794ff",
 		"text-decoration": "inherit",
 	},
-	".cm-completionDetail": {
-		"text-overflow": "ellipsis",
-		"overflow": "hidden",
-		"max-width": "350px",
-		"display": "inline-block",
-		"float": "right",
-	},
 	".cm-tooltip.cm-tooltip-hover": {
 		"z-index": "150",
 	},
+	".cm-tooltip.cm-completionInfo.cm-completionInfo-right": {
+		"padding"	: "0",
+	}
 });
