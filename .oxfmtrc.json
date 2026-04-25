@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "arrowParens": "always",
+  "htmlWhitespaceSensitivity": "ignore",
+  "printWidth": 120,
+  "semi": true,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "useTabs": true,
+  "quoteProps": "consistent",
+  "sortPackageJson": false,
+  "ignorePatterns": []
+}

@@ -1,19 +1,24 @@
 import { createSystem, createVirtualTypeScriptEnvironment } from "@typescript/vfs";
 import ts, { CompilerOptions, JsxEmit, ModuleKind, ModuleResolutionKind, ScriptTarget } from "typescript";
-import { paramTooltip, tsAutocompletion, tsLinting, typescript, typescriptBaseTheme, typescriptHoverTooltip } from "../../../../src";
+import { createTypescriptLSPClient, typescript, typescriptLspTheme } from "../src";
 import { basicSetup, EditorView } from "codemirror";
 
 import { vsCodeDarkPlusTheme, vsCodeDarkPlusHighlightStyle } from "./vs-code-dark-plus";
 import { codeFolding, syntaxHighlighting } from "@codemirror/language";
 
-const types = import.meta.glob("../../../../node_modules/typescript/lib/*.d.ts", {
+const types = import.meta.glob<string>("../node_modules/typescript/lib/*.d.ts", {
 	eager: true,
-	as: "raw",
+	query: "?raw",
+	import: "default",
 });
-const solidTypes = import.meta.glob("../../../../node_modules/{solid-js,csstype}/**/*.{d.ts,json}", {
-	eager: true,
-	as: "raw",
-});
+const solidTypes = import.meta.glob<string>(
+	"../node_modules/{solid-js,csstype}/**/*.{d.ts,json}",
+	{
+		eager: true,
+		query: "?raw",
+		import: "default",
+	},
+);
 
 const compilerOptions: CompilerOptions = {
 	strict: true,
@@ -21,7 +26,7 @@ const compilerOptions: CompilerOptions = {
 	module: ModuleKind.ESNext,
 	jsx: JsxEmit.Preserve,
 	jsxImportSource: "solid-js",
-	moduleResolution: ModuleResolutionKind.Node10,
+	moduleResolution: ModuleResolutionKind.Bundler,
 	allowNonTsExtensions: true,
 };
 const fsMap = new Map<string, string>();
@@ -32,7 +37,8 @@ Object.keys(types).forEach((key) => {
 });
 Object.keys(solidTypes).forEach((key) => {
 	const value = solidTypes[key];
-	fsMap.set(`file://${key.slice(11)}`, value);
+	console.log(key)
+	fsMap.set(`file://${key.slice("..".length)}`, value);
 });
 
 const file = `import { render } from "solid-js/web";
@@ -56,24 +62,17 @@ fsMap.set("file:///index.tsx", file);
 const system = createSystem(fsMap);
 export const Editor = () => {
 	const env = createVirtualTypeScriptEnvironment(system, ["file:///index.tsx"], ts, compilerOptions);
+	const client = createTypescriptLSPClient(env);
 	const editor = new EditorView({
 		doc: file,
 		extensions: [
 			typescript({ jsx: true }),
 			codeFolding(),
-			tsAutocompletion(env, "file:///index.tsx", vsCodeDarkPlusHighlightStyle),
 			syntaxHighlighting(vsCodeDarkPlusHighlightStyle, { fallback: true }),
-			typescriptHoverTooltip(env, "file:///index.tsx", vsCodeDarkPlusHighlightStyle),
-			tsLinting(env, "file:///index.tsx"),
-			paramTooltip(env, "file:///index.tsx"),
 			vsCodeDarkPlusTheme,
-			typescriptBaseTheme,
+			typescriptLspTheme,
 			basicSetup,
-			EditorView.updateListener.of((update) => {
-				if (update.docChanged) {
-					env.updateFile("file:///index.tsx", update.state.doc.toString() + "\n");
-				}
-			}),
+			client.plugin("file:///index.tsx", "typescript"),
 		],
 	});
 

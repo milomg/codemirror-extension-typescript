@@ -1,8 +1,8 @@
 /* @refresh reload */
 import type { Component } from "solid-js";
 import { render } from "solid-js/web";
-import { Editor } from "./components/Editor";
-import "./index.css";
+import { Editor } from "./Editor";
+import "./main.css";
 
 const App: Component = () => {
 	return (
